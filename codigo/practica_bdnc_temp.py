@@ -38,7 +38,8 @@ for node in dblpXMLRoot.getchildren():
                 "nombre" : autor,
                 "year_ini" : year,
                 "year_fin" : year,
-                "publicaciones" : 0,
+                "n_publicaciones" : 0,
+                "publicaciones" : {}
                 "coautores" : set()
             }
             l_autores[autor] = aux_autor
@@ -48,7 +49,8 @@ for node in dblpXMLRoot.getchildren():
         elif(year > aux_autor["year_fin"]):
             aux_autor["year_fin"] = year
 
-        aux_autor["publicaciones"] += 1
+        aux_autor["n_publicaciones"] += 1
+        aux_autor["publicaciones"].add(elemento["titulo"])
 
         aux_autor["coautores"] = aux_autor["coautores"].union(autores)
 
