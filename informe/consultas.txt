@@ -1,0 +1,110 @@
+db.autores.createIndex({"nombre":1})
+ db.autores.createIndex({"num_publicaciones":-1})
+ db.autores.createIndex({"edad":1})
+
+db.publicaciones.createIndex({"year":1})
+db.publicaciones.createIndex({"tipo":1})
+db.publicaciones.createIndex({"autores":1})
+
+1.- db.autores.find({"nombre":"Sanjeev Saxena"},{_id:0,publicaciones:1})
+2.- db.autores.find({"nombre":"Sanjeev Saxena"},{_id:0,num_publicaciones:1})
+3.- db.publicaciones.find({$and:[{"year":2017},{"tipo":"article"}]}).count()
+4.- db.autores.find({"num_publicaciones":{$lt:5}}).count()
+5.- 
+db.autores.aggregate([{$sort:{num_publicaciones:-1}},{ $limit : 10 },{$project:{"nombre":1, "_id":0}},
+{$lookup:{
+            from:"publicaciones",
+            localField:"nombre",
+            foreignField:"autores",
+            as: "publicaciones_selec"
+}
+},
+{$project:{
+    "nombre":1,
+    "articles_selec":{
+        $filter:{
+            input:"$publicaciones_selec",
+            as:"publicacion",
+            cond:{$eq:["$$publicacion.tipo","article"]}
+        }
+    },
+    "inproceedings_selec":{
+        $filter:{
+            input:"$publicaciones_selec",
+            as:"publicacion",
+            cond:{$eq:["$$publicacion.tipo","inproceedings"]}
+        }
+    }
+}
+},
+{$project:{
+    "nombre":1, 
+    "articles":{$size: "$articles_selec"},
+    "inproceedings":{$size: "$inproceedings_selec"}
+}
+}
+])
+
+6.-
+db.publicaciones.aggregate([
+{$group:{
+    _id:"totales",
+    "total_publicaciones":{$sum:1},
+    "total_autores":{$sum:{$size:"$autores"}},
+    "media":{$avg:{$size:"$autores"}}
+}
+}
+])
+
+
+7.- db.autores.find({"nombre":"Sanjeev Saxena"},{_id:0,coautores:1})
+
+8.-
+
+db.autores.aggregate([
+{$sort:{"edad":-1}},
+{$limit:5},
+{$project:{
+    edad:1,
+    _id:0
+}
+}
+])
+
+9.-
+
+db.autores.aggregate([
+{$match:{"edad":{$lt:5}}},
+{$group:{
+    _id: "total",
+    count:{$sum:1}
+}
+}
+])
+
+10.-
+
+db.publicaciones.aggregate([
+{$project:{
+    no_article: {$cond: { if: { $ne: [ "$tipo", "article" ] }, then: 1, else: 0 }},
+    article:{$cond: { if: { $eq: [ "$tipo", "article" ] }, then: 1, else: 0 }}
+}
+},
+{$group:{
+    _id:"tipo",
+    no_article:{$sum:{$add:["$no_article","$article"]}},
+    article:{$sum:"$article"}
+}
+},
+{$project:{
+    _id:0, 
+    total:"$no_article",
+    articles:"$article",
+    porcentaje:{$divide:[{$multiply:["$article",100]},"$no_article"]}
+}
+}
+        
+]
+)
+
+
